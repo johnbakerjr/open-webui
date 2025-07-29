@@ -160,11 +160,17 @@ def query_doc_with_hybrid_search(
             r_score=r,
         )
 
+        print("COMPRESSOR", compressor)
+
         compression_retriever = ContextualCompressionRetriever(
             base_compressor=compressor, base_retriever=ensemble_retriever
         )
 
+        print("COMPRESSION RETRIEVER", compression_retriever)
+
         result = compression_retriever.invoke(query)
+
+        print("RESULT", result)
 
         distances = [d.metadata.get("score") for d in result]
         documents = [d.page_content for d in result]
@@ -628,7 +634,7 @@ def get_sources_from_items(
         # If query_result is None
         # Fallback to collection names and vector search the collections
         if query_result is None and collection_names:
-            collection_names = set(collection_names).difference(extracted_collections)
+            collection_names = list(set(collection_names).difference(extracted_collections))
             if not collection_names:
                 log.debug(f"skipping {item} as it has already been extracted")
                 continue
@@ -656,7 +662,7 @@ def get_sources_from_items(
                             )
 
                     # fallback to non-hybrid search
-                    if not hybrid_search and query_result is None:
+                    if not hybrid_search or query_result is None:
                         query_result = query_collection(
                             collection_names=collection_names,
                             queries=queries,
@@ -957,6 +963,9 @@ class RerankCompressor(BaseDocumentCompressor):
             scores = self.reranking_function(
                 [(query, doc.page_content) for doc in documents]
             )
+            print(query)
+            print([doc.page_content for doc in documents])
+            print(scores)
         else:
             from sentence_transformers import util
 
@@ -965,6 +974,8 @@ class RerankCompressor(BaseDocumentCompressor):
                 [doc.page_content for doc in documents], RAG_EMBEDDING_CONTENT_PREFIX
             )
             scores = util.cos_sim(query_embedding, document_embedding)[0]
+            print(scores)
+            print(query_embedding)
 
         if scores is not None:
             docs_with_scores = list(

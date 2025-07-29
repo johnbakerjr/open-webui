@@ -1316,10 +1316,9 @@ export const getUsage = async (token: string = '') => {
 
 export const getBackendConfig = async () => {
 	let error = null;
-
 	const res = await fetch(`${WEBUI_BASE_URL}/api/config`, {
 		method: 'GET',
-		credentials: 'include',
+		// credentials: 'include',
 		headers: {
 			'Content-Type': 'application/json'
 		}
