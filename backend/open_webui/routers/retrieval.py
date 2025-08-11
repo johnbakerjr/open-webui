@@ -29,7 +29,9 @@ import tiktoken
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TokenTextSplitter
 from langchain_text_splitters import MarkdownHeaderTextSplitter
+from langchain_experimental.text_splitter import SemanticChunker
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 
 from open_webui.models.files import FileModel, Files
 from open_webui.models.knowledge import Knowledges
@@ -1152,6 +1154,23 @@ async def update_rag_config(
 #
 ####################################
 
+class SemanticEmbeddings(Embeddings):
+    """Class that implements OpenWeb UI embedding function, while preserving OpenAI Embedding class compatibility"""
+    def __init__(self, embedding_function, user):
+        self.ef=embedding_function
+        self.user=user
+    
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.ef(
+            list(map(lambda x: x.replace("\n", " "), texts)),
+            prefix=RAG_EMBEDDING_CONTENT_PREFIX,
+            user=self.user,
+        ) # type: ignore
+
+    def embed_query(self, text: str) -> list[float]:
+        """Embed query text."""
+        return self.embed_documents([text])[0]
+
 
 def save_docs_to_vector_db(
     request: Request,
@@ -1195,6 +1214,36 @@ def save_docs_to_vector_db(
             if existing_doc_ids:
                 log.info(f"Document with hash {metadata['hash']} already exists")
                 raise ValueError(ERROR_MESSAGES.DUPLICATE_CONTENT)
+
+    embedding_function = get_embedding_function(
+        request.app.state.config.RAG_EMBEDDING_ENGINE,
+        request.app.state.config.RAG_EMBEDDING_MODEL,
+        request.app.state.ef,
+        (
+            request.app.state.config.RAG_OPENAI_API_BASE_URL
+            if request.app.state.config.RAG_EMBEDDING_ENGINE == "openai"
+            else (
+                request.app.state.config.RAG_OLLAMA_BASE_URL
+                if request.app.state.config.RAG_EMBEDDING_ENGINE == "ollama"
+                else request.app.state.config.RAG_AZURE_OPENAI_BASE_URL
+            )
+        ),
+        (
+            request.app.state.config.RAG_OPENAI_API_KEY
+            if request.app.state.config.RAG_EMBEDDING_ENGINE == "openai"
+            else (
+                request.app.state.config.RAG_OLLAMA_API_KEY
+                if request.app.state.config.RAG_EMBEDDING_ENGINE == "ollama"
+                else request.app.state.config.RAG_AZURE_OPENAI_API_KEY
+            )
+        ),
+        request.app.state.config.RAG_EMBEDDING_BATCH_SIZE,
+        azure_api_version=(
+            request.app.state.config.RAG_AZURE_OPENAI_API_VERSION
+            if request.app.state.config.RAG_EMBEDDING_ENGINE == "azure_openai"
+            else None
+        ),
+    )
 
     if split:
         if request.app.state.config.TEXT_SPLITTER in ["", "character"]:
@@ -1263,11 +1312,26 @@ def save_docs_to_vector_db(
                     )
 
             docs = md_split_docs
+        elif request.app.state.config.TEXT_SPLITTER == "semantic":
+            log.info(f"Using semantic text splitter")
+
+            # semantic splitter uses embeddings to determine optimal split based on content meaning
+            text_splitter = SemanticChunker(
+                embeddings=SemanticEmbeddings(embedding_function, user),
+                buffer_size=2,
+                add_start_index=True,
+                breakpoint_threshold_type="gradient",
+                breakpoint_threshold_amount=95.0
+            )
+            docs = text_splitter.split_documents(docs)
         else:
             raise ValueError(ERROR_MESSAGES.DEFAULT("Invalid text splitter"))
 
     if len(docs) == 0:
         raise ValueError(ERROR_MESSAGES.EMPTY_CONTENT)
+    
+    log.debug(f"using {request.app.state.config.RAG_EMBEDDING_MODEL}")
+    log.debug(docs)
 
     texts = [doc.page_content for doc in docs]
     metadatas = [
@@ -1296,35 +1360,6 @@ def save_docs_to_vector_db(
                 return True
 
         log.info(f"adding to collection {collection_name}")
-        embedding_function = get_embedding_function(
-            request.app.state.config.RAG_EMBEDDING_ENGINE,
-            request.app.state.config.RAG_EMBEDDING_MODEL,
-            request.app.state.ef,
-            (
-                request.app.state.config.RAG_OPENAI_API_BASE_URL
-                if request.app.state.config.RAG_EMBEDDING_ENGINE == "openai"
-                else (
-                    request.app.state.config.RAG_OLLAMA_BASE_URL
-                    if request.app.state.config.RAG_EMBEDDING_ENGINE == "ollama"
-                    else request.app.state.config.RAG_AZURE_OPENAI_BASE_URL
-                )
-            ),
-            (
-                request.app.state.config.RAG_OPENAI_API_KEY
-                if request.app.state.config.RAG_EMBEDDING_ENGINE == "openai"
-                else (
-                    request.app.state.config.RAG_OLLAMA_API_KEY
-                    if request.app.state.config.RAG_EMBEDDING_ENGINE == "ollama"
-                    else request.app.state.config.RAG_AZURE_OPENAI_API_KEY
-                )
-            ),
-            request.app.state.config.RAG_EMBEDDING_BATCH_SIZE,
-            azure_api_version=(
-                request.app.state.config.RAG_AZURE_OPENAI_API_VERSION
-                if request.app.state.config.RAG_EMBEDDING_ENGINE == "azure_openai"
-                else None
-            ),
-        )
 
         embeddings = embedding_function(
             list(map(lambda x: x.replace("\n", " "), texts)),

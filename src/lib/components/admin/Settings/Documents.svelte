@@ -688,6 +688,7 @@
 									<option value="">{$i18n.t('Default')} ({$i18n.t('Character')})</option>
 									<option value="token">{$i18n.t('Token')} ({$i18n.t('Tiktoken')})</option>
 									<option value="markdown_header">{$i18n.t('Markdown (Header)')}</option>
+									<option value="semantic">{$i18n.t('Semantic')}</option>
 								</select>
 							</div>
 						</div>

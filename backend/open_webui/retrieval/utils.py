@@ -662,7 +662,7 @@ def get_sources_from_items(
                             )
 
                     # fallback to non-hybrid search
-                    if not hybrid_search or query_result is None:
+                    if not hybrid_search and query_result is None:
                         query_result = query_collection(
                             collection_names=collection_names,
                             queries=queries,
