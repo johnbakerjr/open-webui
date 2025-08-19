@@ -100,7 +100,7 @@
 	import { Fragment, DOMParser } from 'prosemirror-model';
 	import { EditorState, Plugin, PluginKey, TextSelection, Selection } from 'prosemirror-state';
 	import { Decoration, DecorationSet } from 'prosemirror-view';
-	import { Editor, Extension } from '@tiptap/core';
+	import { Editor, Extension, Mark } from '@tiptap/core';
 
 	// Yjs imports
 	import * as Y from 'yjs';
@@ -125,7 +125,8 @@
 	import FloatingMenu from '@tiptap/extension-floating-menu';
 
 	import { TableKit } from '@tiptap/extension-table';
-	import { ListKit } from '@tiptap/extension-list';
+	import { BulletList, ListItem, ListKit } from '@tiptap/extension-list';
+	import { OrderedList } from '@tiptap/extension-list/ordered-list';
 	import { Placeholder, CharacterCount } from '@tiptap/extensions';
 
 	import Image from './RichTextInput/Image/index.js';
@@ -904,6 +905,50 @@
 		}
 	});
 
+	// const ChunkHighlighter = Extension.create({
+	// 	name: 'chunkHighlighter',
+	// 	addProseMirrorPlugins() {
+	// 		return [
+	// 			new Plugin({
+	// 				key: new PluginKey('chunkHighlighter'),
+	// 				props: {
+	// 					decorations: (state) => {
+	// 						const { selection } = state;
+	// 						console.log(state.doc);
+	// 						return DecorationSet.create(state.doc, [
+	// 							Decoration.inline(0, state.doc.content.size, {
+	// 								style: "color: yellow"
+	// 							})
+	// 						]);
+	// 					}
+	// 				}
+	// 			})
+	// 		];
+	// 	}
+	// });
+
+	const ChunkHighlighter = Extension.create({
+		name: 'chunkHighlighter',
+		addProseMirrorPlugins() {
+			return [
+				new Plugin({
+					key: new PluginKey('chunkHighlighter'),
+					props: {
+						decorations: (state) => {
+							const { selection } = state;
+							console.log(this.editor.view.state.doc);
+							return DecorationSet.create(state.doc, [
+								Decoration.inline(0, state.doc.content.size, {
+									style: "color: yellow"
+								})
+							]);
+						}
+					}
+				})
+			];
+		}
+	});
+
 	onMount(async () => {
 		content = value;
 
@@ -952,6 +997,39 @@
 
 		console.log(bubbleMenuElement, floatingMenuElement);
 
+		// const ChunkHighlighter = Mark.create({
+		// 	spanning: true,
+		// 	keepOnSplit: true,
+		// 	parseHTML() {
+		// 		return [{ tag: 'mark' }]
+		// 	},
+		// 	renderHTML({ HTMLAttributes }) {
+		// 		return ['mark', HTMLAttributes, 0]
+		// 	},
+		// });
+
+		// const ChunkHighlighter = Mark.create({
+		// 	name: 'highlight',
+
+		// 	addOptions() {
+		// 		return {
+		// 			HTMLAttributes: {},
+		// 		}
+		// 	},
+
+		// 	parseHTML() {
+		// 		return [
+		// 		{
+		// 			tag: 'mark',
+		// 		},
+		// 		]
+		// 	},
+
+		// 	renderHTML({ HTMLAttributes }) {
+		// 		return ['mark', HTMLAttributes, 0]
+		// 	},
+		// });
+		
 		editor = new Editor({
 			element: element,
 			extensions: [
@@ -960,11 +1038,13 @@
 				}),
 				Placeholder.configure({ placeholder }),
 				SelectionDecoration,
-
+				ChunkHighlighter,
 				CodeBlockLowlight.configure({
 					lowlight
 				}),
-				Highlight,
+				Highlight.configure({
+					multicolor: true
+				}),
 				Typography,
 
 				Mention.configure({
@@ -980,6 +1060,14 @@
 					taskItem: {
 						nested: true
 					}
+				}),
+				OrderedList.configure({
+  					keepAttributes: true,
+					keepMarks: true,
+				}),
+				BulletList.configure({
+					keepAttributes: true,
+					keepMarks: true,
 				}),
 				CharacterCount.configure({}),
 				...(image ? [Image] : []),

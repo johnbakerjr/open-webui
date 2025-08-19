@@ -128,6 +128,13 @@ class ChromaClient(VectorDBBase):
         collection = self.client.get_collection(name=collection_name)
         if collection:
             result = collection.get()
+            print("AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH", GetResult(
+                **{
+                    "ids": [result["ids"]],
+                    "documents": [result["documents"]],
+                    "metadatas": [result["metadatas"]],
+                }
+            ))
             return GetResult(
                 **{
                     "ids": [result["ids"]],

@@ -53,6 +53,18 @@ class FileModel(BaseModel):
 
 
 ####################
+# File Chunks Schema
+####################
+
+
+class FileChunksModel(BaseModel):
+    id: str
+    user_id: str
+    embedding_config: dict[str, str]
+    chunks: Optional[list[str]]
+
+
+####################
 # Forms
 ####################
 

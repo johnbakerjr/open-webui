@@ -22,7 +22,8 @@
 		updateFileDataContentById,
 		uploadFile,
 		deleteFileById,
-		getFileById
+		getFileById,
+		getFileChunksById
 	} from '$lib/apis/files';
 	import {
 		addFileToKnowledgeById,
@@ -51,6 +52,9 @@
 	import AccessControlModal from '../common/AccessControlModal.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
 	import Textarea from '$lib/components/common/Textarea.svelte';
+	import { color } from '@codemirror/theme-one-dark';
+	// import { Mark } from 'prosemirror-model';
+	import { Mark } from '@tiptap/core';
 
 	let largeScreen = true;
 
@@ -96,9 +100,11 @@
 	let selectedFile = null;
 	let selectedFileId = null;
 	let selectedFileContent = '';
+	let selectedFileChunks = '';
 
 	// Add cache object
 	let fileContentCache = new Map();
+	let fileChunkCache = new Map();
 
 	$: if (selectedFileId) {
 		const file = (knowledge?.files ?? []).find((file) => file.id === selectedFileId);
@@ -439,6 +445,7 @@
 
 		// Clear the cache for this file since we're updating it
 		fileContentCache.delete(fileId);
+		fileChunkCache.delete(fileId);
 
 		const res = updateFileDataContentById(localStorage.token, fileId, content).catch((e) => {
 			toast.error(`${e}`);
@@ -499,22 +506,71 @@
 			selectedFile = file;
 
 			// Check cache first
-			if (fileContentCache.has(file.id)) {
-				selectedFileContent = fileContentCache.get(file.id);
-				return;
-			}
+			// if (fileContentCache.has(file.id)) {
+			// 	selectedFileContent = fileContentCache.get(file.id);
+			// 	selectedFileChunks = fileChunkCache.get(file.id);
+			// 	return;
+			// }
 
 			const response = await getFileById(localStorage.token, file.id);
-			if (response) {
-				selectedFileContent = response.data.content;
+			const chunkResponse = await getFileChunksById(localStorage.token, file.id);
+			if (response && chunkResponse) {
+				selectedFileChunks = chunkResponse.chunks;
+				selectedFileContent = chunksToHTML(selectedFileChunks);
+				// selectedFileContent = response.data.content; 
+				
 				// Cache the content
 				fileContentCache.set(file.id, response.data.content);
+				fileChunkCache.set(file.id, selectedFileChunks);
 			} else {
 				toast.error($i18n.t('No content found in file.'));
 			}
 		} catch (e) {
 			toast.error($i18n.t('Failed to load file content.'));
 		}
+	};
+
+	const chunksToHTML = (chunks, fileText=null) => {
+		const colorsArray = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51"];
+		// const coloredChunks = `${Array.from(chunks).map((chunk, i) => {
+		// 	colorsArray.push(colorsArray[i]);
+		// 	const mark = Mark.create({
+		// 		spanning: true,
+		// 		keepOnSplit: true,
+		// 		parseHTML() {
+		// 			return [{ tag: 'p' }]
+		// 		},
+		// 		renderHTML({ HTMLAttributes }) {
+		// 			return ['p', HTMLAttributes, 0]
+		// 		},
+		// 	});
+		// 	mark //`<span><mark data-color="${colorsArray[i]}">${chunk}</mark></span>`;
+		// }).join(' ')}`;
+
+		
+
+		const coloredChunks = `${Array.from(chunks).map((chunk, i) => {
+			colorsArray.push(colorsArray[i]);
+			return `<span data-chunk-no="${i}"><mark data-color="${colorsArray[i]}">${chunk}</mark></span>`;
+		}).join(' ')}`;
+		// <span data-chunk-no="${i}"> </span>
+		// const parser = new DOMParser();
+		// const doc = parser.parseFromString(coloredChunks, 'text/html');
+
+		// const allElementsNodeList = doc.getElementsByTagName("*");
+		// let lastElColor = '';
+		// for (let i = 0; i < allElementsNodeList.length; i++){
+		// 	const el = allElementsNodeList[i];
+		// 	const elColor = el.getAttribute('data-color') ?? '';
+		// 	if (!elColor){
+		// 		el.setAttribute('data-color', `${lastElColor}}`);
+		// 	};
+		// 	lastElColor = elColor;
+		// };
+
+		console.log(coloredChunks);
+
+		return coloredChunks;
 	};
 
 	const onDragOver = (e) => {

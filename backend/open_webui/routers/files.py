@@ -2,6 +2,7 @@ import logging
 import os
 import uuid
 import json
+from ast import literal_eval
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Optional
@@ -31,6 +32,7 @@ from open_webui.models.files import (
     FileForm,
     FileModel,
     FileModelResponse,
+    FileChunksModel,
     Files,
 )
 from open_webui.models.knowledge import Knowledges
@@ -373,6 +375,41 @@ async def get_file_by_id(id: str, user=Depends(get_verified_user)):
         or has_access_to_file(id, "read", user)
     ):
         return file
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ERROR_MESSAGES.NOT_FOUND,
+        )
+    
+############################
+# Get File Chunks By Id
+############################
+
+
+@router.get("/{id}/chunks", response_model=Optional[FileChunksModel])
+async def get_file_chunks_by_id(id: str, user=Depends(get_verified_user)):
+    file_obj = VECTOR_DB_CLIENT.get(f"file-{id}")
+
+    if not file_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ERROR_MESSAGES.NOT_FOUND,
+        )
+    
+    metadata = file_obj.metadatas[0][0]
+    user_id = metadata.get("created_by", "")
+
+    if (
+        user_id == user.id
+        or user.role == "admin"
+        or has_access_to_file(id, "read", user)
+    ):
+        return {
+            "id": id,
+            "user_id": user_id,
+            "embedding_config": literal_eval(metadata.get("embedding_config", r"{}")),
+            "chunks": file_obj.documents[0]
+        } if file_obj else {}
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
