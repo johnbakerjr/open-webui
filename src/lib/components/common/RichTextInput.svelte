@@ -97,10 +97,10 @@
 	const i18n = getContext('i18n');
 	const eventDispatch = createEventDispatcher();
 
-	import { Fragment, DOMParser } from 'prosemirror-model';
+	import { Fragment, DOMParser, Schema } from 'prosemirror-model';
 	import { EditorState, Plugin, PluginKey, TextSelection, Selection } from 'prosemirror-state';
 	import { Decoration, DecorationSet } from 'prosemirror-view';
-	import { Editor, Extension, Mark } from '@tiptap/core';
+	import { Editor, Extension, Mark, Node } from '@tiptap/core';
 
 	// Yjs imports
 	import * as Y from 'yjs';
@@ -614,6 +614,75 @@
 		};
 	}
 
+	const textSchema = new Schema({
+		nodes: {
+			text: {},
+			doc: {content: "text*"}
+		}
+	});
+
+	const chunkSchemaOld = new Schema({
+		nodes: {
+			text: {},
+			chunk: {
+				content: "text*",
+				inline: true,
+				toDOM() { return ["chunk", 0] },
+				parseDOM: [{tag: "chunk"}]
+			},
+			doc: {
+				content: "( text | chunk )*"
+			}
+		},
+		// marks: {
+		// 	highlightedChunk: {
+		// 		toDOM() { return ["chunk", 0] },
+		// 		parseDOM: [{tag: "chunk"}]
+		// 	},
+		// }
+	});
+
+	const ChunkSchema = Node.create({
+		name: 'chunk',
+		group: 'inline',
+		content: 'inline*',
+		inline: true,
+		parseHTML() {
+			return [
+				{ 
+					tag: 'chunk',
+					getAttrs: element => {
+						return {
+							chunk_no: element.getAttribute('data-chunk-no'),
+						}
+					}
+				}
+			]
+		},
+		addAttributes() {
+			return {
+				chunk_no: {
+					default: null,
+					parseHTML: element => element.getAttribute('data-chunk-no'),
+					renderHTML: attributes => {
+						if (!attributes.chunk_no) {
+							return {};
+						}
+						return { 'data-chunk-no': attributes.chunk_no };
+					}
+				}
+			}
+		},
+		renderHTML({ node, HTMLAttributes }) {
+			if (!node.isInline) {
+				console.log("TRUE");
+				return [node.type.name, ['chunk', HTMLAttributes, 0]];
+			}
+			console.log("FALSE");
+			return ['chunk', HTMLAttributes, 0];
+		},
+	});
+
 	export const replaceCommandWithText = async (text) => {
 		const { state, dispatch } = editor.view;
 		const { selection } = state;
@@ -927,27 +996,90 @@
 	// 	}
 	// });
 
-	const ChunkHighlighter = Extension.create({
-		name: 'chunkHighlighter',
-		addProseMirrorPlugins() {
-			return [
-				new Plugin({
-					key: new PluginKey('chunkHighlighter'),
-					props: {
-						decorations: (state) => {
-							const { selection } = state;
-							console.log(this.editor.view.state.doc);
-							return DecorationSet.create(state.doc, [
-								Decoration.inline(0, state.doc.content.size, {
-									style: "color: yellow"
-								})
-							]);
-						}
-					}
-				})
-			];
-		}
-	});
+	// const ChunkHighlighter = Extension.create({
+	// 	name: 'chunkHighlighter',
+	// 	addProseMirrorPlugins() {
+	// 		return [
+	// 			new Plugin({
+	// 				key: new PluginKey('chunkHighlighter'),
+	// 				props: {
+	// 					decorations: (state) => {
+	// 						const { selection } = state;
+	// 						console.log(this.editor.view.state.doc);
+	// 						return DecorationSet.create(state.doc, [
+	// 							Decoration.inline(0, state.doc.content.size, {
+	// 								style: "color: yellow"
+	// 							})
+	// 						]);
+	// 					}
+	// 				}
+	// 			})
+	// 		];
+	// 	}
+	// });
+
+
+
+	// makeNoteGroup{
+	import {findWrapping} from "prosemirror-transform"
+
+	// function makeNoteGroup(state, dispatch) {
+	// 	// Get a range around the selected blocks
+	// 	let range = state.selection.$from.blockRange(state.selection.$to);
+	// 	// See if it is possible to wrap that range in a note group
+	// 	let wrapping = findWrapping(range, noteSchema.nodes.notegroup);
+	// 	// If not, the command doesn't apply
+	// 	if (!wrapping) return false;
+	// 	// Otherwise, dispatch a transaction, using the `wrap` method to
+	// 	// create the step that does the actual wrapping.
+	// 	if (dispatch) dispatch(state.tr.wrap(range, wrapping).scrollIntoView());
+	// 	return true
+	// }
+
+	// starSchema_1{
+	// let starSchema = new Schema({
+	// 	nodes: {
+	// 		text: {
+	// 		group: "inline",
+	// 		},
+	// 		star: {
+	// 			inline: true,
+	// 			group: "inline",
+	// 			toDOM() { return ["star", "🟊"] },
+	// 			parseDOM: [{tag: "star"}]
+	// 		},
+	// 		paragraph: {
+	// 			group: "block",
+	// 			content: "inline*",
+	// 			toDOM() { return ["p", 0] },
+	// 			parseDOM: [{tag: "p"}]
+	// 		},
+	// 		boring_paragraph: {
+	// 			group: "block",
+	// 			content: "text*",
+	// 			marks: "",
+	// 			toDOM() { return ["p", {class: "boring"}, 0] },
+	// 			parseDOM: [{tag: "p.boring", priority: 60}]
+	// 		},
+	// 		doc: {
+	// 			content: "block+"
+	// 		}
+	// 	},
+		// }
+		// starSchema_2{
+		// marks: {
+		// 	shouting: {
+		// 	toDOM() { return ["shouting", 0] },
+		// 		parseDOM: [{tag: "shouting"}]
+		// 	},
+		// 	link: {
+		// 		attrs: {href: {}},
+		// 		toDOM(node) { return ["a", {href: node.attrs.href}, 0] },
+		// 		parseDOM: [{tag: "a", getAttrs(dom) { return {href: dom.href} }}],
+		// 		inclusive: false
+		// 	}
+		// }
+	// });
 
 	onMount(async () => {
 		content = value;
@@ -1038,7 +1170,8 @@
 				}),
 				Placeholder.configure({ placeholder }),
 				SelectionDecoration,
-				ChunkHighlighter,
+				ChunkSchema,
+				// ChunkHighlighter,
 				CodeBlockLowlight.configure({
 					lowlight
 				}),

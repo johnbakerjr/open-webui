@@ -1318,7 +1318,7 @@ def save_docs_to_vector_db(
             # semantic splitter uses embeddings to determine optimal split based on content meaning
             text_splitter = SemanticChunker(
                 embeddings=SemanticEmbeddings(embedding_function, user),
-                buffer_size=2,
+                buffer_size=1,
                 add_start_index=True,
                 breakpoint_threshold_type="gradient",
                 breakpoint_threshold_amount=95.0

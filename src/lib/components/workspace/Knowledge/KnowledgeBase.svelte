@@ -547,12 +547,15 @@
 		// 	mark //`<span><mark data-color="${colorsArray[i]}">${chunk}</mark></span>`;
 		// }).join(' ')}`;
 
-		
-
 		const coloredChunks = `${Array.from(chunks).map((chunk, i) => {
-			colorsArray.push(colorsArray[i]);
-			return `<span data-chunk-no="${i}"><mark data-color="${colorsArray[i]}">${chunk}</mark></span>`;
+			// colorsArray.push(colorsArray[i]);
+			return `<chunk data-chunk-no="${i}">${chunk}</chunk>`;
 		}).join(' ')}`;
+		// class="chunk-color-${i % 5}"
+		// const coloredChunks = `${Array.from(chunks).map((chunk, i) => {
+		// 	colorsArray.push(colorsArray[i]);
+		// 	return `<span data-chunk-no="${i}"><mark data-color="${colorsArray[i]}">${chunk}</mark></span>`;
+		// }).join(' ')}`;
 		// <span data-chunk-no="${i}"> </span>
 		// const parser = new DOMParser();
 		// const doc = parser.parseFromString(coloredChunks, 'text/html');
@@ -567,8 +570,6 @@
 		// 	};
 		// 	lastElColor = elColor;
 		// };
-
-		console.log(coloredChunks);
 
 		return coloredChunks;
 	};
