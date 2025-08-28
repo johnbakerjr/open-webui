@@ -1557,7 +1557,7 @@ def process_file(
                 result = save_docs_to_vector_db(
                     request,
                     docs=docs,
-                    collection_name=f"file-{collection_name}",
+                    collection_name=collection_name,
                     metadata={
                         "file_id": file.id,
                         "name": file.filename,
