@@ -59,6 +59,7 @@ class FileModel(BaseModel):
 
 class FileChunksModel(BaseModel):
     id: str
+    filename: str
     user_id: str
     embedding_config: dict[str, str]
     chunks: Optional[list[str]]

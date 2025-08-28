@@ -34,12 +34,12 @@
 			return false;
 		}
 
-		if (
-			(inRange === distances.length - 1 && outOfRange === 1) ||
-			(outOfRange === distances.length - 1 && inRange === 1)
-		) {
-			return false;
-		}
+		// if (
+		// 	(inRange === distances.length - 1 && outOfRange === 1) ||
+		// 	(outOfRange === distances.length - 1 && inRange === 1)
+		// ) {
+		// 	return false;
+		// }
 
 		return true;
 	}
@@ -93,6 +93,8 @@
 
 		showRelevance = calculateShowRelevance(citations);
 		showPercentage = shouldShowPercentage(citations);
+
+		console.log(showRelevance, showPercentage);
 	}
 
 	const decodeString = (str: string) => {

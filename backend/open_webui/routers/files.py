@@ -388,7 +388,9 @@ async def get_file_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.get("/{id}/chunks", response_model=Optional[FileChunksModel])
 async def get_file_chunks_by_id(id: str, user=Depends(get_verified_user)):
+    # file_obj = VECTOR_DB_CLIENT.query(collection_name=id, filter={"price": {"$eq": 4.20}})
     file_obj = VECTOR_DB_CLIENT.get(f"file-{id}")
+    log.debug(file_obj)
 
     if not file_obj:
         raise HTTPException(
@@ -406,6 +408,7 @@ async def get_file_chunks_by_id(id: str, user=Depends(get_verified_user)):
     ):
         return {
             "id": id,
+            "filename": metadata.get("name", ""),
             "user_id": user_id,
             "embedding_config": literal_eval(metadata.get("embedding_config", r"{}")),
             "chunks": file_obj.documents[0]

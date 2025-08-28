@@ -128,13 +128,6 @@ class ChromaClient(VectorDBBase):
         collection = self.client.get_collection(name=collection_name)
         if collection:
             result = collection.get()
-            print("AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH", GetResult(
-                **{
-                    "ids": [result["ids"]],
-                    "documents": [result["documents"]],
-                    "metadatas": [result["metadatas"]],
-                }
-            ))
             return GetResult(
                 **{
                     "ids": [result["ids"]],
@@ -154,7 +147,7 @@ class ChromaClient(VectorDBBase):
         documents = [item["text"] for item in items]
         embeddings = [item["vector"] for item in items]
         metadatas = [stringify_metadata(item["metadata"]) for item in items]
-
+        # log.debug(documents)
         for batch in create_batches(
             api=self.client,
             documents=documents,
@@ -162,22 +155,26 @@ class ChromaClient(VectorDBBase):
             ids=ids,
             metadatas=metadatas,
         ):
+            # log.debug(batch)
             collection.add(*batch)
 
     def upsert(self, collection_name: str, items: list[VectorItem]):
         # Update the items in the collection, if the items are not present, insert them. If the collection does not exist, it will be created.
+        log.debug("UPSERTING?")
         collection = self.client.get_or_create_collection(
             name=collection_name, metadata={"hnsw:space": "cosine"}
         )
-
+        log.debug(collection.count())
         ids = [item["id"] for item in items]
         documents = [item["text"] for item in items]
         embeddings = [item["vector"] for item in items]
         metadatas = [stringify_metadata(item["metadata"]) for item in items]
-
+        log.debug(embeddings)
         collection.upsert(
             ids=ids, documents=documents, embeddings=embeddings, metadatas=metadatas
         )
+
+        log.debug(collection.get(ids=ids[0:2]))
 
     def delete(
         self,

@@ -50,6 +50,7 @@
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '../common/AccessControlModal.svelte';
+	import ChunkModal from '../common/ChunkModal.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
 	import Textarea from '$lib/components/common/Textarea.svelte';
 	import { color } from '@codemirror/theme-one-dark';
@@ -79,6 +80,7 @@
 	let showAddTextContentModal = false;
 	let showSyncConfirmModal = false;
 	let showAccessControlModal = false;
+	let showChunkModal = false;
 
 	let inputFiles = null;
 
@@ -516,8 +518,8 @@
 			const chunkResponse = await getFileChunksById(localStorage.token, file.id);
 			if (response && chunkResponse) {
 				selectedFileChunks = chunkResponse.chunks;
-				selectedFileContent = chunksToHTML(selectedFileChunks);
-				// selectedFileContent = response.data.content; 
+				// selectedFileContent = chunksToHTML(selectedFileChunks);
+				selectedFileContent = response.data.content; 
 				
 				// Cache the content
 				fileContentCache.set(file.id, response.data.content);
@@ -757,6 +759,10 @@
 			}}
 			accessRoles={['read', 'write']}
 		/>
+		<ChunkModal
+			bind:show={showChunkModal}
+			selectedFileId={selectedFile?.id}
+		/>
 		<div class="w-full mb-2.5">
 			<div class=" flex w-full">
 				<div class="flex-1">
@@ -772,7 +778,22 @@
 								}}
 							/>
 						</div>
+						{#if selectedFile?.id}
+							<div class="self-center shrink-0">
+								<button
+									class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
+									type="button"
+									on:click={() => {
+										showChunkModal = true;
+									}}
+								>
 
+									<div class="text-sm font-medium shrink-0">
+										{$i18n.t('View Chunks')}
+									</div>
+								</button>
+							</div>
+						{/if}
 						<div class="self-center shrink-0">
 							<button
 								class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"

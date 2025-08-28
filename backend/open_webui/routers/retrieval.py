@@ -1318,22 +1318,26 @@ def save_docs_to_vector_db(
             # semantic splitter uses embeddings to determine optimal split based on content meaning
             text_splitter = SemanticChunker(
                 embeddings=SemanticEmbeddings(embedding_function, user),
-                buffer_size=1,
+                buffer_size=2,
                 add_start_index=True,
                 breakpoint_threshold_type="gradient",
-                breakpoint_threshold_amount=95.0
+                breakpoint_threshold_amount=90.0
             )
             docs = text_splitter.split_documents(docs)
+            # log.debug("SPLITTING SEMANTICALLY")
+            # log.debug(docs[0:3])
         else:
             raise ValueError(ERROR_MESSAGES.DEFAULT("Invalid text splitter"))
 
     if len(docs) == 0:
         raise ValueError(ERROR_MESSAGES.EMPTY_CONTENT)
     
-    log.debug(f"using {request.app.state.config.RAG_EMBEDDING_MODEL}")
-    log.debug(docs)
+    # log.debug(f"using {request.app.state.config.RAG_EMBEDDING_MODEL}")
+    # log.debug(docs)
 
     texts = [doc.page_content for doc in docs]
+    # log.debug("TEXTS")
+    # log.debug(texts[0:3])
     metadatas = [
         {
             **doc.metadata,
@@ -1377,7 +1381,14 @@ def save_docs_to_vector_db(
             for idx, text in enumerate(texts)
         ]
 
-        VECTOR_DB_CLIENT.insert(
+        # log.debug(items[0:3])
+
+        # VECTOR_DB_CLIENT.insert(
+        #     collection_name=collection_name,
+        #     items=items,
+        # )
+
+        VECTOR_DB_CLIENT.upsert(
             collection_name=collection_name,
             items=items,
         )
@@ -1532,7 +1543,7 @@ def process_file(
                 ]
             text_content = " ".join([doc.page_content for doc in docs])
 
-        log.debug(f"text_content: {text_content}")
+        # log.debug(f"text_content: {text_content}")
         Files.update_file_data_by_id(
             file.id,
             {"status": "completed", "content": text_content},
@@ -1546,7 +1557,7 @@ def process_file(
                 result = save_docs_to_vector_db(
                     request,
                     docs=docs,
-                    collection_name=collection_name,
+                    collection_name=f"file-{collection_name}",
                     metadata={
                         "file_id": file.id,
                         "name": file.filename,
