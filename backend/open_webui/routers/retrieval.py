@@ -250,6 +250,18 @@ async def get_embedding_config(request: Request, user=Depends(get_admin_user)):
     }
 
 
+@router.get("/collections/list")
+async def get_all_collections(request: Request, limit: int = 100, offset: int = 0, user=Depends(get_admin_user)):
+        if user.role == "admin":
+            return {
+                "collections": VECTOR_DB_CLIENT.list_collections(limit=limit, offset=offset)
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ERROR_MESSAGES.NOT_FOUND,
+            )
+
 class OpenAIConfigForm(BaseModel):
     url: str
     key: str

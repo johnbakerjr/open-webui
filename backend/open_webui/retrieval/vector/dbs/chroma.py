@@ -2,8 +2,9 @@ import chromadb
 import logging
 from chromadb import Settings
 from chromadb.utils.batch_utils import create_batches
+from chromadb.api.models.Collection import CollectionName
 
-from typing import Optional
+from typing import Optional, Sequence
 
 from open_webui.retrieval.vector.main import (
     VectorDBBase,
@@ -61,6 +62,9 @@ class ChromaClient(VectorDBBase):
                 database=CHROMA_DATABASE,
             )
 
+    def list_collections(self, limit: int, offset: int) -> Sequence[CollectionName]:
+        return self.client.list_collections(limit, offset)
+        
     def has_collection(self, collection_name: str) -> bool:
         # Check if the collection exists based on the collection name.
         collection_names = self.client.list_collections()

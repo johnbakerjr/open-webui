@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Sequence
+from chromadb.api.models.Collection import CollectionName
 
 
 class VectorItem(BaseModel):
@@ -34,6 +35,11 @@ class VectorDBBase(ABC):
     @abstractmethod
     def has_collection(self, collection_name: str) -> bool:
         """Check if the collection exists in the vector DB."""
+        pass
+
+    @abstractmethod
+    def list_collections(self, limit: int, offset: int) -> Sequence[CollectionName]:
+        """List all collections in the vector DB."""
         pass
 
     @abstractmethod
