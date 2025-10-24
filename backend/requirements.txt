@@ -50,6 +50,9 @@ langchain==0.3.26
 langchain-community==0.3.26
 langchain-experimental==0.3.4
 
+llama-index
+spacy
+
 fake-useragent==2.2.0
 chromadb==0.6.3
 posthog==5.4.0

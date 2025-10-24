@@ -192,10 +192,10 @@ export const getFileById = async (token: string, id: string) => {
 	return res;
 };
 
-export const getFileChunksById = async (token: string, id: string) => {
+export const getFileChunksById = async (token: string, knowledgeId: string, id: string) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/files/${id}/chunks`, {
+	const res = await fetch(`${WEBUI_API_BASE_URL}/files/${id}/${knowledgeId}/chunks`, {
 		method: 'GET',
 		headers: {
 			Accept: 'application/json',

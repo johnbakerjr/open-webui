@@ -18,6 +18,7 @@
 	// export let allowPublic = true;
 
 	export let selectedFileId = '';
+	export let knowledgeId = '';
 	let selectedFileName = '';
 	let chunks = [];
 	let res = {};
@@ -43,7 +44,7 @@
 	// }
 
 	onMount(async () => {
-		res = await getFileChunksById(localStorage.token, selectedFileId);
+		res = await getFileChunksById(localStorage.token, knowledgeId, selectedFileId);
 		chunks = res.chunks;
 		selectedFileName = res.filename;
 	});

@@ -11,6 +11,7 @@
 	// export let allowPublic = true;
 
 	export let selectedFileId = '';
+	export let knowledgeId = '';
 
 	// export let onChange = () => {};
 </script>
@@ -32,7 +33,7 @@
 		</div>
 
 		<div class="w-full px-5 pb-4 dark:text-white">
-			<FileChunks {selectedFileId} />
+			<FileChunks {selectedFileId} {knowledgeId}/>
 		</div>
 	</div>
 </Modal>

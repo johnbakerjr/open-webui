@@ -75,6 +75,15 @@ class KnowledgeModel(BaseModel):
     updated_at: int  # timestamp in epoch
 
 
+class KnowledgeChunksModel(BaseModel):
+    id: str
+    filename: str
+    user_id: str
+    embedding_config: dict[str, str]
+    chunks: Optional[list[str]] = None
+    embeddings: Optional[list[list[float]]] = None
+
+
 ####################
 # Forms
 ####################

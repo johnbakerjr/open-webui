@@ -33,6 +33,11 @@ from langchain_experimental.text_splitter import SemanticChunker
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
+from llama_index.core.node_parser import (
+    SemanticDoubleMergingSplitterNodeParser,
+    LanguageConfig,
+)
+
 from open_webui.models.files import FileModel, Files
 from open_webui.models.knowledge import Knowledges
 from open_webui.storage.provider import Storage
@@ -254,7 +259,7 @@ async def get_embedding_config(request: Request, user=Depends(get_admin_user)):
 async def get_all_collections(request: Request, limit: int = 100, offset: int = 0, user=Depends(get_admin_user)):
         if user.role == "admin":
             return {
-                "collections": VECTOR_DB_CLIENT.list_collections(limit=limit, offset=offset)
+                "collections": Knowledges.get_knowledge_bases() #VECTOR_DB_CLIENT.list_collections(limit=limit, offset=offset)
             }
         else:
             raise HTTPException(
@@ -1194,6 +1199,7 @@ def save_docs_to_vector_db(
     add: bool = False,
     user=None,
 ) -> bool:
+    log.debug(docs)
     def _get_docs_info(docs: list[Document]) -> str:
         docs_info = set()
 
@@ -1338,6 +1344,23 @@ def save_docs_to_vector_db(
             docs = text_splitter.split_documents(docs)
             # log.debug("SPLITTING SEMANTICALLY")
             # log.debug(docs[0:3])
+        # elif request.app.state.config.TEXT_SPLITTER == "semanticDoublePass":
+
+            # config = LanguageConfig(language="english", spacy_model="en_core_web_md")
+            # text_splitter = SemanticDoubleMergingSplitterNodeParser(
+            #     language_config=config,
+            #     initial_threshold=0.4,
+            #     appending_threshold=0.5,
+            #     merging_threshold=0.5,
+            #     max_chunk_size=5000,
+            # )
+            # # this_metadata = getattr(docs[0], "metadata", {})
+            # # from operator import attrgetter
+            # [setattr(doc, field("id_", getattr(doc, "metadata", {}).get("file_id", "")) for doc in docs]
+            
+            # log.debug(docs)
+            # # docs.id_ = docs.metadata
+            # docs = text_splitter.get_nodes_from_documents(docs)
         else:
             raise ValueError(ERROR_MESSAGES.DEFAULT("Invalid text splitter"))
 
@@ -1347,7 +1370,7 @@ def save_docs_to_vector_db(
     # log.debug(f"using {request.app.state.config.RAG_EMBEDDING_MODEL}")
     # log.debug(docs)
 
-    texts = [doc.page_content for doc in docs]
+    texts = [doc.page_content if request.app.state.config.TEXT_SPLITTER != "semanticDoublePass" else doc.get_content() for doc in docs]
     # log.debug("TEXTS")
     # log.debug(texts[0:3])
     metadatas = [

@@ -515,15 +515,15 @@
 			// }
 
 			const response = await getFileById(localStorage.token, file.id);
-			const chunkResponse = await getFileChunksById(localStorage.token, file.id);
-			if (response && chunkResponse) {
-				selectedFileChunks = chunkResponse.chunks;
+			// const chunkResponse = await getFileChunksById(localStorage.token, file.id);
+			if (response) {
+				// selectedFileChunks = chunkResponse.chunks;
 				// selectedFileContent = chunksToHTML(selectedFileChunks);
 				selectedFileContent = response.data.content; 
 				
 				// Cache the content
 				fileContentCache.set(file.id, response.data.content);
-				fileChunkCache.set(file.id, selectedFileChunks);
+				// fileChunkCache.set(file.id, selectedFileChunks);
 			} else {
 				toast.error($i18n.t('No content found in file.'));
 			}
@@ -762,6 +762,7 @@
 		<ChunkModal
 			bind:show={showChunkModal}
 			selectedFileId={selectedFile?.id}
+			knowledgeId={knowledge.id}
 		/>
 		<div class="w-full mb-2.5">
 			<div class=" flex w-full">
